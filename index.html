@@ -1,0 +1,830 @@
+<!DOCTYPE html>
+<html lang="sr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Kuhinja — Dany's Gastro</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;1,400&family=DM+Sans:wght@300;400;500;600&family=Bebas+Neue&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg:       #111010;
+    --card:     #1A1917;
+    --card2:    #201E1B;
+    --gold:     #C9943A;
+    --rust:     #A63D20;
+    --green:    #2d8a4e;
+    --muted:    #5A5450;
+    --text:     #EDE7DD;
+    --border:   rgba(237,231,221,0.07);
+    --gold-dim: rgba(201,148,58,0.12);
+  }
+  *, *::before, *::after { margin:0; padding:0; box-sizing:border-box; }
+  body { background:var(--bg); color:var(--text); font-family:'DM Sans',sans-serif; font-weight:300; min-height:100vh; }
+
+  /* HEADER */
+  .kheader {
+    background:#0C0B0A; height:60px;
+    display:flex; align-items:center; justify-content:space-between;
+    padding:0 clamp(14px,4vw,32px);
+    border-bottom:1px solid var(--border);
+    position:sticky; top:0; z-index:300;
+  }
+  .klogo { font-family:'Playfair Display',serif; font-weight:700; font-size:18px; color:var(--text); letter-spacing:-0.3px; display:flex; align-items:center; gap:8px; }
+  .klogo em { font-style:italic; color:var(--gold); font-weight:400; }
+  .klogo-tag { font-size:9px; letter-spacing:3px; text-transform:uppercase; color:var(--muted); }
+  .live-pill { display:flex; align-items:center; gap:7px; font-size:10px; letter-spacing:2px; text-transform:uppercase; }
+  .live-dot { width:7px; height:7px; border-radius:50%; background:var(--muted); animation:pulse 2s ease infinite; }
+  @keyframes pulse { 0%,100%{opacity:1;transform:scale(1);} 50%{opacity:.4;transform:scale(.8);} }
+
+  .hbtn {
+    display:inline-flex; align-items:center; gap:7px;
+    padding:8px 16px; border:1px solid var(--border);
+    background:transparent; color:var(--muted);
+    font-family:'DM Sans',sans-serif; font-size:10px; letter-spacing:2px; text-transform:uppercase;
+    cursor:pointer; transition:all .2s; text-decoration:none;
+  }
+  .hbtn:hover  { border-color:var(--gold); color:var(--gold); background:var(--gold-dim); }
+  .hbtn:active { transform:scale(.97); }
+
+  /* SUMMARY BAR */
+  .summary-bar {
+    background:var(--card); border-bottom:1px solid var(--border);
+    padding:14px clamp(14px,4vw,32px);
+    display:flex; gap:3px; flex-wrap:wrap;
+  }
+  .sum-card {
+    flex:1; min-width:110px;
+    background:var(--card2); border:1px solid var(--border);
+    padding:14px 16px; cursor:pointer; transition:all .2s;
+    position:relative; overflow:hidden;
+  }
+  .sum-card::before { content:''; position:absolute; top:0;left:0;right:0;height:2px; background:var(--gold); opacity:.25; transition:opacity .2s; }
+  .sum-card:hover { border-color:rgba(201,148,58,.4); background:#252320; }
+  .sum-card:hover::before { opacity:.9; }
+  .sum-card:active { transform:scale(.98); }
+  .sc-label { font-size:9px; letter-spacing:2.5px; text-transform:uppercase; color:var(--muted); margin-bottom:8px; }
+  .sc-value { font-family:'Playfair Display',serif; font-size:clamp(18px,2.5vw,26px); font-weight:700; color:var(--text); line-height:1; }
+  .sc-value.gold  { color:var(--gold); }
+  .sc-value.green { color:var(--green); }
+  .sc-value.rust  { color:var(--rust); }
+  .sc-sub { font-size:10px; color:var(--muted); margin-top:4px; }
+
+  /* TABS */
+  .tabs {
+    padding:12px clamp(14px,4vw,32px);
+    display:flex; gap:4px; flex-wrap:wrap;
+    border-bottom:1px solid var(--border); background:var(--card);
+  }
+  .tab {
+    padding:9px 20px; font-size:10px; letter-spacing:2px; text-transform:uppercase;
+    border:1px solid var(--border); background:transparent; color:var(--muted);
+    cursor:pointer; font-family:'DM Sans',sans-serif; transition:all .2s;
+    -webkit-tap-highlight-color:transparent;
+  }
+  .tab:hover        { border-color:var(--gold); color:var(--gold); background:var(--gold-dim); }
+  .tab.active       { border-color:var(--gold); color:var(--gold); background:var(--gold-dim); }
+  .tab:active       { transform:scale(.97); }
+  .tab.tab-done.active { border-color:var(--green); color:var(--green); background:rgba(45,138,78,.1); }
+  .tab.tab-hist.active { border-color:rgba(237,231,221,.3); color:var(--text); background:rgba(237,231,221,.05); }
+
+  /* ORDERS GRID */
+  .orders-grid {
+    padding:14px clamp(14px,4vw,32px) 80px;
+    display:grid; grid-template-columns:repeat(auto-fill,minmax(288px,1fr)); gap:12px;
+  }
+
+  /* ORDER CARD */
+  .ocard {
+    background:var(--card); border:1px solid var(--border); padding:22px 20px;
+    animation:slideIn .35s cubic-bezier(.16,1,.3,1); transition:border-color .2s;
+  }
+  .ocard:hover { border-color:rgba(201,148,58,.2); }
+  .ocard.is-new  { border-color:rgba(201,148,58,.45); box-shadow:0 0 0 1px rgba(201,148,58,.1),0 4px 20px rgba(0,0,0,.4); }
+  .ocard.is-done { opacity:.55; }
+  @keyframes slideIn { from{opacity:0;transform:translateY(-12px);} to{opacity:1;transform:translateY(0);} }
+
+  .oc-top { display:flex; justify-content:space-between; margin-bottom:12px; }
+  .oc-num { font-family:'Bebas Neue',sans-serif; font-size:11px; letter-spacing:3px; color:var(--muted); }
+  .oc-time { font-size:11px; color:var(--muted); }
+
+  .oc-pill {
+    display:inline-flex; align-items:center; gap:6px;
+    font-size:9px; letter-spacing:2px; text-transform:uppercase;
+    padding:4px 10px; margin-bottom:12px;
+  }
+  .oc-pill.new  { background:rgba(201,148,58,.1); border:1px solid rgba(201,148,58,.3); color:var(--gold); }
+  .oc-pill.new::before { content:''; width:6px; height:6px; background:var(--gold); border-radius:50%; animation:pulse 1.5s ease infinite; }
+  .oc-pill.done { background:rgba(45,138,78,.1); border:1px solid rgba(45,138,78,.3); color:var(--green); }
+  .oc-pill.done::before { content:'✓'; font-size:9px; }
+
+  .oc-name { font-family:'Playfair Display',serif; font-size:19px; font-weight:500; color:var(--text); margin-bottom:3px; }
+  .oc-phone { font-size:12px; color:var(--muted); margin-bottom:14px; }
+  .oc-phone a { color:var(--gold); text-decoration:none; }
+  .oc-divider { height:1px; background:var(--border); margin:12px 0; }
+  .oc-row { display:flex; justify-content:space-between; padding:5px 0; }
+  .oc-lbl { font-size:10px; letter-spacing:1.5px; text-transform:uppercase; color:var(--muted); }
+  .oc-val { font-size:13px; color:var(--text); text-align:right; max-width:58%; }
+  .oc-total { display:flex; justify-content:space-between; align-items:center; margin-top:12px; padding-top:12px; border-top:1px solid var(--border); }
+  .oc-total-lbl { font-size:10px; letter-spacing:2px; text-transform:uppercase; color:var(--muted); }
+  .oc-total-val { font-family:'Playfair Display',serif; font-size:26px; font-weight:700; color:var(--gold); }
+
+  .oc-actions { display:flex; gap:6px; margin-top:14px; }
+  .btn-done {
+    flex:1; padding:12px 10px;
+    background:rgba(45,138,78,.12); border:1px solid rgba(45,138,78,.35); color:var(--green);
+    font-family:'DM Sans',sans-serif; font-size:10px; letter-spacing:2px; text-transform:uppercase;
+    cursor:pointer; transition:all .2s; -webkit-tap-highlight-color:transparent;
+  }
+  .btn-done:hover  { background:rgba(45,138,78,.28); transform:translateY(-1px); }
+  .btn-done:active { transform:scale(.97); background:rgba(45,138,78,.4); }
+  .btn-del {
+    padding:12px 14px; background:transparent; border:1px solid var(--border); color:var(--muted);
+    font-family:'DM Sans',sans-serif; font-size:13px; cursor:pointer; transition:all .2s;
+    -webkit-tap-highlight-color:transparent;
+  }
+  .btn-del:hover  { border-color:var(--rust); color:var(--rust); background:rgba(166,61,32,.1); }
+  .btn-del:active { transform:scale(.96); }
+
+  /* EMPTY */
+  .empty { grid-column:1/-1; text-align:center; padding:clamp(48px,8vw,100px) 24px; }
+  .empty-icon { font-size:44px; opacity:.2; margin-bottom:18px; }
+  .empty-title { font-family:'Playfair Display',serif; font-size:clamp(20px,3vw,30px); font-weight:700; color:var(--muted); margin-bottom:8px; }
+  .empty-sub { font-size:12px; color:var(--muted); letter-spacing:.5px; }
+
+  /* HISTORY TABLE */
+  .history-wrap { grid-column:1/-1; overflow-x:auto; border:1px solid var(--border); background:var(--card); }
+  .htable { width:100%; border-collapse:collapse; font-size:13px; }
+  .htable th { font-size:9px; letter-spacing:2.5px; text-transform:uppercase; color:var(--muted); padding:13px 16px; text-align:left; border-bottom:1px solid var(--border); font-weight:500; white-space:nowrap; }
+  .htable td { padding:13px 16px; border-bottom:1px solid var(--border); color:rgba(237,231,221,.7); white-space:nowrap; vertical-align:middle; }
+  .htable tr:last-child td { border-bottom:none; }
+  .htable tr:hover td { background:rgba(237,231,221,.03); }
+  .ht-name { font-family:'Playfair Display',serif; font-size:15px; color:var(--text); font-weight:500; }
+  .ht-price { font-family:'Playfair Display',serif; font-size:15px; color:var(--gold); }
+  .ht-new  { color:var(--gold);  font-size:9px; letter-spacing:1.5px; text-transform:uppercase; }
+  .ht-done { color:var(--green); font-size:9px; letter-spacing:1.5px; text-transform:uppercase; }
+
+  /* ANALYTICS MODAL */
+  .modal-overlay {
+    position:fixed; inset:0; z-index:500;
+    background:rgba(10,8,6,.88); backdrop-filter:blur(8px);
+    display:flex; align-items:flex-start; justify-content:center;
+    padding:20px 16px 60px; overflow-y:auto;
+    opacity:0; pointer-events:none; transition:opacity .3s;
+  }
+  .modal-overlay.open { opacity:1; pointer-events:all; }
+  .modal {
+    background:var(--card); border:1px solid rgba(201,148,58,.22);
+    width:100%; max-width:900px; padding:clamp(24px,4vw,44px);
+    position:relative; margin:auto;
+    transform:translateY(-24px); transition:transform .35s cubic-bezier(.16,1,.3,1);
+  }
+  .modal-overlay.open .modal { transform:translateY(0); }
+
+  .modal-close {
+    position:absolute; top:18px; right:18px;
+    background:transparent; border:1px solid var(--border); color:var(--muted);
+    width:36px; height:36px; font-size:18px; cursor:pointer; transition:all .2s;
+    display:flex; align-items:center; justify-content:center; font-family:'DM Sans',sans-serif;
+    -webkit-tap-highlight-color:transparent;
+  }
+  .modal-close:hover  { border-color:var(--rust); color:var(--rust); }
+  .modal-close:active { transform:scale(.95); }
+
+  .modal-title { font-family:'Playfair Display',serif; font-size:clamp(26px,4vw,44px); font-weight:700; color:var(--text); margin-bottom:4px; }
+  .modal-title em { font-style:italic; color:var(--gold); font-weight:400; }
+  .modal-sub { font-size:12px; color:var(--muted); letter-spacing:.5px; margin-bottom:26px; }
+
+  .period-tabs { display:flex; gap:4px; margin-bottom:24px; flex-wrap:wrap; }
+  .ptab {
+    padding:8px 20px; font-size:10px; letter-spacing:2px; text-transform:uppercase;
+    background:transparent; border:1px solid var(--border); color:var(--muted);
+    cursor:pointer; font-family:'DM Sans',sans-serif; transition:all .2s;
+    -webkit-tap-highlight-color:transparent;
+  }
+  .ptab:hover  { border-color:var(--gold); color:var(--gold); background:var(--gold-dim); }
+  .ptab.active { border-color:var(--gold); color:var(--gold); background:var(--gold-dim); }
+  .ptab:active { transform:scale(.97); }
+
+  .kpi-grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(130px,1fr)); gap:2px; margin-bottom:22px; }
+  .kpi-card { background:var(--card2); border:1px solid var(--border); padding:18px 16px; position:relative; overflow:hidden; }
+  .kpi-card::before { content:''; position:absolute; top:0;left:0;right:0;height:2px; background:var(--gold); opacity:.28; }
+  .kpi-lbl { font-size:9px; letter-spacing:2.5px; text-transform:uppercase; color:var(--muted); margin-bottom:8px; }
+  .kpi-val { font-family:'Playfair Display',serif; font-size:clamp(20px,2.5vw,30px); font-weight:700; color:var(--text); line-height:1; margin-bottom:5px; }
+  .kpi-val.gold  { color:var(--gold); }
+  .kpi-val.green { color:var(--green); }
+  .kpi-val.rust  { color:var(--rust); }
+  .kpi-change { font-size:11px; }
+  .kpi-change.up   { color:var(--green); }
+  .kpi-change.down { color:var(--rust); }
+  .kpi-change.flat { color:var(--muted); }
+
+  .chart-block { background:var(--card2); border:1px solid var(--border); padding:20px 18px 14px; margin-bottom:16px; }
+  .chart-hdr { font-size:10px; letter-spacing:2px; text-transform:uppercase; color:var(--muted); margin-bottom:14px; display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:8px; }
+  .chart-hdr span { font-size:11px; color:var(--muted); }
+  canvas#modalChart { width:100%!important; height:160px!important; display:block; }
+  .chart-foot { display:flex; justify-content:space-between; margin-top:8px; font-size:10px; color:var(--muted); }
+
+  .top-section { margin-top:16px; }
+  .top-title { font-size:10px; letter-spacing:2.5px; text-transform:uppercase; color:var(--muted); margin-bottom:12px; }
+  .top-row { display:flex; align-items:center; gap:12px; padding:10px 0; border-bottom:1px solid var(--border); }
+  .top-row:last-child { border-bottom:none; }
+  .top-rank { font-family:'Bebas Neue',sans-serif; font-size:22px; color:rgba(201,148,58,.3); width:26px; text-align:center; flex-shrink:0; }
+  .top-name { flex:1; font-size:14px; color:var(--text); }
+  .top-bar-wrap { width:100px; height:4px; background:rgba(237,231,221,.07); flex-shrink:0; }
+  .top-bar { height:4px; background:var(--gold); }
+  .top-cnt { font-family:'Playfair Display',serif; font-size:14px; font-weight:700; color:var(--gold); width:36px; text-align:right; flex-shrink:0; }
+
+  /* TOAST */
+  .toast {
+    position:fixed; top:70px; right:16px;
+    background:var(--gold); color:#111010;
+    padding:13px 22px; font-size:12px; font-weight:600; letter-spacing:.4px;
+    z-index:9999; transform:translateX(130%); transition:transform .4s cubic-bezier(.16,1,.3,1);
+    box-shadow:0 8px 24px rgba(0,0,0,.5); max-width:300px; font-family:'DM Sans',sans-serif;
+  }
+  .toast.show { transform:translateX(0); }
+
+  @media(max-width:600px) {
+    .orders-grid { grid-template-columns:1fr; }
+    .kpi-grid    { grid-template-columns:1fr 1fr; }
+  }
+</style>
+</head>
+<body>
+
+<div class="toast" id="toast"></div>
+
+<!-- ANALYTICS MODAL -->
+<div class="modal-overlay" id="analyticsModal" onclick="handleOverlayClick(event)">
+  <div class="modal">
+    <button class="modal-close" onclick="closeAnalytics()">✕</button>
+    <div class="modal-title">Analitika <em>prodaje</em></div>
+    <div class="modal-sub" id="modalSub">Dany's Gastro</div>
+
+    <div class="period-tabs">
+      <button class="ptab active" onclick="setPeriod('day', this)">Dan</button>
+      <button class="ptab"        onclick="setPeriod('week', this)">Sedmica</button>
+      <button class="ptab"        onclick="setPeriod('month', this)">Mesec</button>
+    </div>
+
+    <div class="kpi-grid">
+      <div class="kpi-card">
+        <div class="kpi-lbl">Ukupan prihod</div>
+        <div class="kpi-val gold" id="kpiRevenue">—</div>
+        <div class="kpi-change flat" id="kpiRevenueChg">—</div>
+      </div>
+      <div class="kpi-card">
+        <div class="kpi-lbl">Broj narudžbi</div>
+        <div class="kpi-val" id="kpiCount">—</div>
+        <div class="kpi-change flat" id="kpiCountChg">—</div>
+      </div>
+      <div class="kpi-card">
+        <div class="kpi-lbl">Prosečna vrednost</div>
+        <div class="kpi-val" id="kpiAvg">—</div>
+        <div class="kpi-change flat">po narudžbi</div>
+      </div>
+      <div class="kpi-card">
+        <div class="kpi-lbl">Završene</div>
+        <div class="kpi-val green" id="kpiDone">—</div>
+        <div class="kpi-change flat" id="kpiDoneChg">—</div>
+      </div>
+      <div class="kpi-card">
+        <div class="kpi-lbl">Čeka pripremu</div>
+        <div class="kpi-val rust" id="kpiActive">—</div>
+        <div class="kpi-change flat">aktivne narudžbe</div>
+      </div>
+      <div class="kpi-card">
+        <div class="kpi-lbl">Promena prihoda</div>
+        <div class="kpi-val" id="kpiChgVal">—</div>
+        <div class="kpi-change flat">vs. prethodni period</div>
+      </div>
+    </div>
+
+    <div class="chart-block">
+      <div class="chart-hdr">
+        <span>Prihod po vremenskom periodu</span>
+        <span id="chartRangeLabel">—</span>
+      </div>
+      <canvas id="modalChart"></canvas>
+      <div class="chart-foot">
+        <span id="chartLeft">—</span>
+        <span id="chartRight">—</span>
+      </div>
+    </div>
+
+    <div class="top-section">
+      <div class="top-title">— Najprodavanija jela</div>
+      <div id="topItemsList"></div>
+    </div>
+  </div>
+</div>
+
+<!-- HEADER -->
+<header class="kheader">
+  <div style="display:flex;align-items:center;gap:6px">
+    <span class="klogo">Dany's <em>Gastro</em> <span class="klogo-tag">Kuhinja</span></span>
+  </div>
+  <div style="display:flex;align-items:center;gap:8px">
+    <div class="live-pill">
+      <div class="live-dot" id="liveDot"></div>
+      <span id="liveStatus" style="color:var(--muted)">Konekcija...</span>
+    </div>
+    <button class="hbtn" onclick="openAnalytics()">📊 Analitika</button>
+  </div>
+</header>
+
+<!-- SUMMARY BAR -->
+<div class="summary-bar">
+  <div class="sum-card" onclick="openAnalytics()">
+    <div class="sc-label">Prihod danas</div>
+    <div class="sc-value gold" id="sumRevenue">0 RSD</div>
+    <div class="sc-sub">↗ klikni za analitiku</div>
+  </div>
+  <div class="sum-card" onclick="openAnalytics()">
+    <div class="sc-label">Narudžbe danas</div>
+    <div class="sc-value" id="sumCount">0</div>
+    <div class="sc-sub">↗ klikni za analitiku</div>
+  </div>
+  <div class="sum-card" onclick="openAnalytics()">
+    <div class="sc-label">Aktivne</div>
+    <div class="sc-value rust" id="sumActive">0</div>
+    <div class="sc-sub">čeka pripremu</div>
+  </div>
+  <div class="sum-card" onclick="openAnalytics()">
+    <div class="sc-label">Završene danas</div>
+    <div class="sc-value green" id="sumDone">0</div>
+    <div class="sc-sub">↗ klikni za analitiku</div>
+  </div>
+</div>
+
+<!-- TABS -->
+<div class="tabs">
+  <button class="tab active"   onclick="setTab('new', this)">🔥 Nove</button>
+  <button class="tab tab-done" onclick="setTab('done', this)">✓ Završene</button>
+  <button class="tab tab-hist" onclick="setTab('history', this)">📋 Istorija</button>
+  <button class="tab"          onclick="setTab('all', this)">Sve</button>
+</div>
+
+<!-- ORDERS -->
+<div class="orders-grid" id="ordersGrid">
+  <div class="empty">
+    <div class="empty-icon">⏳</div>
+    <div class="empty-title">Učitavam...</div>
+    <div class="empty-sub">Poveži Firebase da vidiš narudžbe u realnom vremenu</div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════
+  FIREBASE SETUP — isto kao u order.html!
+  1. console.firebase.google.com → projekat
+  2. Firestore Database → Create → Test mode
+  3. Project Settings → Web app → kopiraj config
+  4. Zameni TVOJ_* ispod ISTIM configom koji si stavio u order.html
+═══════════════════════════════════════════════════ -->
+
+<!-- Step 1: load Firebase as module, expose db to window -->
+<script type="module">
+  import { initializeApp }   from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
+  import { getFirestore, collection, query, orderBy, onSnapshot, doc, updateDoc, deleteDoc }
+    from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+
+  // ⚠️ ZAMENI SA TVOJIM FIREBASE CONFIGOM (isti kao u order.html!)
+  const firebaseConfig = {
+    apiKey:            "TVOJ_API_KEY",
+    authDomain:        "TVOJ_PROJECT.firebaseapp.com",
+    projectId:         "TVOJ_PROJECT_ID",
+    storageBucket:     "TVOJ_PROJECT.appspot.com",
+    messagingSenderId: "TVOJ_SENDER_ID",
+    appId:             "TVOJ_APP_ID"
+  };
+
+  const app = initializeApp(firebaseConfig);
+  const db  = getFirestore(app);
+
+  // Expose Firebase actions to window so regular script can call them
+  window._fbMarkDone = async (id) => {
+    await updateDoc(doc(db, 'orders', id), { status: 'done' });
+  };
+  window._fbDelete = async (id) => {
+    await deleteDoc(doc(db, 'orders', id));
+  };
+
+  // Start real-time listener → feeds data into window._allOrders and triggers render
+  const q = query(collection(db, 'orders'), orderBy('createdAt', 'desc'));
+  let firstLoad = true;
+  let knownIds  = new Set();
+
+  onSnapshot(q, snap => {
+    const dotEl    = document.getElementById('liveDot');
+    const statusEl = document.getElementById('liveStatus');
+    dotEl.style.background = 'var(--green)';
+    statusEl.textContent   = 'LIVE';
+    statusEl.style.color   = 'var(--green)';
+
+    window._allOrders = [];
+    snap.forEach(d => window._allOrders.push({ id: d.id, ...d.data() }));
+
+    if (!firstLoad) {
+      snap.docChanges().forEach(ch => {
+        if (ch.type === 'added' && !knownIds.has(ch.doc.id)) {
+          const o = ch.doc.data();
+          window._playSound();
+          window._showToast(`🔔 ${o.firstName} ${o.lastName} — ${o.meal}`);
+        }
+      });
+    }
+    snap.forEach(d => knownIds.add(d.id));
+    firstLoad = false;
+
+    // Call UI functions from regular script
+    window._renderOrders();
+    window._updateSummary();
+    if (document.getElementById('analyticsModal').classList.contains('open')) {
+      window._renderAnalytics();
+    }
+  }, err => {
+    const dotEl    = document.getElementById('liveDot');
+    const statusEl = document.getElementById('liveStatus');
+    dotEl.style.background = 'var(--rust)';
+    statusEl.textContent   = 'GREŠKA';
+    statusEl.style.color   = 'var(--rust)';
+    document.getElementById('ordersGrid').innerHTML = `
+      <div class="empty">
+        <div class="empty-icon">⚠️</div>
+        <div class="empty-title">Firebase nije konfigurisan</div>
+        <div class="empty-sub">Zameni TVOJ_* vrednosti sa tvojim Firebase configom.</div>
+      </div>`;
+  });
+</script>
+
+<!-- Step 2: ALL UI logic in a plain script — no module scope issues, onclick works perfectly -->
+<script>
+  // ── STATE (plain globals, fully accessible) ────────────
+  window._allOrders    = [];
+  window._currentTab   = 'new';
+  window._currentPeriod= 'day';
+
+  // ── SOUND ──────────────────────────────────────────────
+  window._playSound = function() {
+    try {
+      var ctx = new (window.AudioContext || window.webkitAudioContext)();
+      [[880,.00,.18,.35],[1100,.18,.15,.28],[880,.33,.22,.22]].forEach(function(arr) {
+        var f=arr[0],s=arr[1],d=arr[2],v=arr[3];
+        var o=ctx.createOscillator(), g=ctx.createGain();
+        o.connect(g); g.connect(ctx.destination);
+        o.type='sine'; o.frequency.setValueAtTime(f, ctx.currentTime+s);
+        g.gain.setValueAtTime(v, ctx.currentTime+s);
+        g.gain.exponentialRampToValueAtTime(.001, ctx.currentTime+s+d);
+        o.start(ctx.currentTime+s); o.stop(ctx.currentTime+s+d);
+      });
+    } catch(e) {}
+  };
+
+  // ── TOAST ──────────────────────────────────────────────
+  window._showToast = function(msg) {
+    var t = document.getElementById('toast');
+    t.textContent = msg;
+    t.classList.add('show');
+    setTimeout(function(){ t.classList.remove('show'); }, 4200);
+  };
+
+  // ── HELPERS ────────────────────────────────────────────
+  function esc(s){ return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+
+  function fmtTime(ts) {
+    if (!ts) return '—';
+    var d = ts.toDate ? ts.toDate() : new Date(ts);
+    return d.toLocaleTimeString('sr-RS', {hour:'2-digit', minute:'2-digit'});
+  }
+  function fmtDate(ts) {
+    if (!ts) return '—';
+    var d = ts.toDate ? ts.toDate() : new Date(ts);
+    return d.toLocaleDateString('sr-RS', {day:'2-digit', month:'2-digit', year:'numeric'});
+  }
+
+  function inPeriod(order, period) {
+    if (!order.createdAt) return false;
+    var d   = order.createdAt.toDate ? order.createdAt.toDate() : new Date(order.createdAt);
+    var now = new Date();
+    if (period === 'day')   return d.toDateString() === now.toDateString();
+    if (period === 'week')  { var w=new Date(now); w.setDate(now.getDate()-7); return d>=w; }
+    var m = new Date(now); m.setMonth(now.getMonth()-1); return d >= m;
+  }
+
+  function getPrev(period) {
+    return (window._allOrders || []).filter(function(o) {
+      if (!o.createdAt) return false;
+      var d   = o.createdAt.toDate ? o.createdAt.toDate() : new Date(o.createdAt);
+      var now = new Date();
+      if (period === 'day') {
+        var y = new Date(now); y.setDate(now.getDate()-1);
+        return d.toDateString() === y.toDateString();
+      }
+      if (period === 'week') {
+        var w2=new Date(now); w2.setDate(now.getDate()-14);
+        var w1=new Date(now); w1.setDate(now.getDate()-7);
+        return d>=w2 && d<w1;
+      }
+      var m2=new Date(now); m2.setMonth(now.getMonth()-2);
+      var m1=new Date(now); m1.setMonth(now.getMonth()-1);
+      return d>=m2 && d<m1;
+    });
+  }
+
+  function chgPct(now, prev) {
+    if (!prev) return { txt:'Nema prethodnih podataka', cls:'flat' };
+    var pct = Math.round(((now - prev) / prev) * 100);
+    if (pct === 0) return { txt:'Isti kao prethodni period', cls:'flat' };
+    return { txt: pct > 0 ? '↑ '+pct+'% više' : '↓ '+Math.abs(pct)+'% manje', cls: pct > 0 ? 'up' : 'down' };
+  }
+
+  // ── SUMMARY BAR ────────────────────────────────────────
+  window._updateSummary = function() {
+    var orders  = window._allOrders || [];
+    var today   = orders.filter(function(o){ return inPeriod(o,'day'); });
+    var revenue = today.reduce(function(s,o){ return s+(o.total||0); }, 0);
+    var active  = orders.filter(function(o){ return o.status==='new'; }).length;
+    var done    = orders.filter(function(o){ return o.status==='done' && inPeriod(o,'day'); }).length;
+    document.getElementById('sumRevenue').textContent = revenue.toLocaleString('sr-RS') + ' RSD';
+    document.getElementById('sumCount').textContent   = today.length;
+    document.getElementById('sumActive').textContent  = active;
+    document.getElementById('sumDone').textContent    = done;
+  };
+
+  // ── ANALYTICS OPEN / CLOSE ─────────────────────────────
+  function openAnalytics() {
+    document.getElementById('analyticsModal').classList.add('open');
+    window._renderAnalytics();
+  }
+  function closeAnalytics() {
+    document.getElementById('analyticsModal').classList.remove('open');
+  }
+  function handleOverlayClick(e) {
+    if (e.target === document.getElementById('analyticsModal')) closeAnalytics();
+  }
+  function setPeriod(period, btn) {
+    window._currentPeriod = period;
+    document.querySelectorAll('.ptab').forEach(function(t){ t.classList.remove('active'); });
+    btn.classList.add('active');
+    window._renderAnalytics();
+  }
+
+  // ── RENDER ANALYTICS ───────────────────────────────────
+  window._renderAnalytics = function() {
+    var period   = window._currentPeriod;
+    var orders   = window._allOrders || [];
+    var filtered = orders.filter(function(o){ return inPeriod(o, period); });
+    var prev     = getPrev(period);
+
+    var revenue     = filtered.reduce(function(s,o){ return s+(o.total||0); }, 0);
+    var prevRevenue = prev.reduce(function(s,o){ return s+(o.total||0); }, 0);
+    var count       = filtered.length;
+    var prevCount   = prev.length;
+    var avg         = count ? Math.round(revenue/count) : 0;
+    var active      = orders.filter(function(o){ return o.status==='new'; }).length;
+    var done        = filtered.filter(function(o){ return o.status==='done'; }).length;
+    var prevDone    = prev.filter(function(o){ return o.status==='done'; }).length;
+
+    var revChg  = chgPct(revenue, prevRevenue);
+    var cntChg  = chgPct(count, prevCount);
+    var doneChg = chgPct(done, prevDone);
+
+    var pctVal = prevRevenue ? Math.round(((revenue-prevRevenue)/prevRevenue)*100) : null;
+    var pctTxt = pctVal === null ? '—' : (pctVal >= 0 ? '+'+pctVal+'%' : pctVal+'%');
+    var pctCls = pctVal === null ? 'flat' : pctVal >= 0 ? 'gold' : 'rust';
+
+    var labels = { day:'Danas', week:'Ova sedmica', month:'Ovaj mesec' };
+    document.getElementById('modalSub').textContent = 'Dany\'s Gastro — ' + labels[period];
+
+    document.getElementById('kpiRevenue').textContent    = revenue.toLocaleString('sr-RS') + ' RSD';
+    document.getElementById('kpiRevenueChg').textContent = revChg.txt;
+    document.getElementById('kpiRevenueChg').className   = 'kpi-change ' + revChg.cls;
+    document.getElementById('kpiCount').textContent      = count;
+    document.getElementById('kpiCountChg').textContent   = cntChg.txt;
+    document.getElementById('kpiCountChg').className     = 'kpi-change ' + cntChg.cls;
+    document.getElementById('kpiAvg').textContent        = avg.toLocaleString('sr-RS') + ' RSD';
+    document.getElementById('kpiDone').textContent       = done;
+    document.getElementById('kpiDoneChg').textContent    = doneChg.txt;
+    document.getElementById('kpiDoneChg').className      = 'kpi-change ' + doneChg.cls;
+    document.getElementById('kpiActive').textContent     = active;
+    document.getElementById('kpiChgVal').textContent     = pctTxt;
+    document.getElementById('kpiChgVal').className       = 'kpi-val ' + pctCls;
+
+    drawChart(filtered, period);
+    drawTopItems(filtered);
+  };
+
+  // ── LINE CHART ─────────────────────────────────────────
+  function drawChart(orders, period) {
+    var canvas = document.getElementById('modalChart');
+    if (!canvas) return;
+    var ctx = canvas.getContext('2d');
+    var W   = canvas.parentElement.clientWidth - 36 || 500;
+    var H   = 160;
+    var dpr = window.devicePixelRatio || 1;
+    canvas.width  = W * dpr;
+    canvas.height = H * dpr;
+    canvas.style.width  = W + 'px';
+    canvas.style.height = H + 'px';
+    ctx.scale(dpr, dpr);
+
+    var buckets = [], labels = [], now = new Date();
+
+    if (period === 'day') {
+      for (var h = 0; h < 24; h++) {
+        var s = orders.filter(function(o){
+          if (!o.createdAt) return false;
+          var d = o.createdAt.toDate ? o.createdAt.toDate() : new Date(o.createdAt);
+          return d.getHours()===h && d.toDateString()===now.toDateString();
+        }).reduce(function(s,o){ return s+(o.total||0); }, 0);
+        buckets.push(s); labels.push(h%4===0 ? h+':00' : '');
+      }
+      document.getElementById('chartLeft').textContent  = '00:00';
+      document.getElementById('chartRight').textContent = '23:00';
+      document.getElementById('chartRangeLabel').textContent = 'po satu';
+    } else if (period === 'week') {
+      var dnames = ['Ned','Pon','Uto','Sre','Čet','Pet','Sub'];
+      for (var i = 6; i >= 0; i--) {
+        var day = new Date(now); day.setDate(now.getDate()-i);
+        var s = orders.filter(function(o){
+          if (!o.createdAt) return false;
+          var d = o.createdAt.toDate ? o.createdAt.toDate() : new Date(o.createdAt);
+          return d.toDateString() === day.toDateString();
+        }).reduce(function(s,o){ return s+(o.total||0); }, 0);
+        buckets.push(s); labels.push(dnames[day.getDay()]);
+      }
+      document.getElementById('chartLeft').textContent  = '7 dana unazad';
+      document.getElementById('chartRight').textContent = 'Danas';
+      document.getElementById('chartRangeLabel').textContent = 'po danu';
+    } else {
+      for (var i = 29; i >= 0; i--) {
+        var day = new Date(now); day.setDate(now.getDate()-i);
+        var s = orders.filter(function(o){
+          if (!o.createdAt) return false;
+          var d = o.createdAt.toDate ? o.createdAt.toDate() : new Date(o.createdAt);
+          return d.toDateString() === day.toDateString();
+        }).reduce(function(s,o){ return s+(o.total||0); }, 0);
+        buckets.push(s); labels.push(i%7===0 ? (30-i)+'d' : '');
+      }
+      document.getElementById('chartLeft').textContent  = '30 dana unazad';
+      document.getElementById('chartRight').textContent = 'Danas';
+      document.getElementById('chartRangeLabel').textContent = 'po danu';
+    }
+
+    var max  = Math.max.apply(null, buckets.concat([1]));
+    var pad  = { top:16, right:12, bottom:26, left:8 };
+    var cW   = W - pad.left - pad.right;
+    var cH   = H - pad.top  - pad.bottom;
+    var step = buckets.length > 1 ? cW / (buckets.length - 1) : cW;
+
+    ctx.clearRect(0, 0, W, H);
+
+    // grid lines
+    for (var gi = 0; gi <= 4; gi++) {
+      var gy = pad.top + (cH/4)*gi;
+      ctx.strokeStyle = 'rgba(237,231,221,0.06)'; ctx.lineWidth = 1;
+      ctx.beginPath(); ctx.moveTo(pad.left, gy); ctx.lineTo(W-pad.right, gy); ctx.stroke();
+    }
+
+    var pts = buckets.map(function(v, i){ return { x: pad.left + i*step, y: pad.top + cH - (v/max)*cH }; });
+
+    if (pts.length > 1) {
+      // gradient fill
+      var grad = ctx.createLinearGradient(0, pad.top, 0, pad.top+cH);
+      grad.addColorStop(0, 'rgba(201,148,58,0.3)');
+      grad.addColorStop(1, 'rgba(201,148,58,0.01)');
+      ctx.beginPath();
+      ctx.moveTo(pts[0].x, pad.top+cH);
+      ctx.lineTo(pts[0].x, pts[0].y);
+      for (var pi = 1; pi < pts.length; pi++) ctx.lineTo(pts[pi].x, pts[pi].y);
+      ctx.lineTo(pts[pts.length-1].x, pad.top+cH);
+      ctx.closePath(); ctx.fillStyle = grad; ctx.fill();
+
+      // line
+      ctx.beginPath(); ctx.moveTo(pts[0].x, pts[0].y);
+      for (var pi = 1; pi < pts.length; pi++) ctx.lineTo(pts[pi].x, pts[pi].y);
+      ctx.strokeStyle = 'rgba(201,148,58,0.9)'; ctx.lineWidth = 2.5; ctx.lineJoin = 'round'; ctx.stroke();
+
+      // dots
+      for (var pi = 0; pi < pts.length; pi++) {
+        if (buckets[pi] > 0) {
+          ctx.beginPath(); ctx.arc(pts[pi].x, pts[pi].y, 3.5, 0, Math.PI*2);
+          ctx.fillStyle = '#C9943A'; ctx.fill();
+          ctx.beginPath(); ctx.arc(pts[pi].x, pts[pi].y, 1.5, 0, Math.PI*2);
+          ctx.fillStyle = '#EDE7DD'; ctx.fill();
+        }
+      }
+    }
+
+    // axis labels
+    ctx.fillStyle = 'rgba(90,84,80,0.7)'; ctx.font = '9px DM Sans,sans-serif'; ctx.textAlign = 'center';
+    for (var li = 0; li < labels.length; li++) {
+      if (labels[li]) ctx.fillText(labels[li], pad.left + li*step, H-6);
+    }
+  }
+
+  // ── TOP ITEMS ──────────────────────────────────────────
+  function drawTopItems(orders) {
+    var meals = {};
+    orders.forEach(function(o){ if(o.meal) meals[o.meal] = (meals[o.meal]||0)+1; });
+    var sorted = Object.entries(meals).sort(function(a,b){ return b[1]-a[1]; }).slice(0,5);
+    var maxCnt = sorted.length ? sorted[0][1] : 1;
+    var el = document.getElementById('topItemsList');
+    if (!sorted.length) {
+      el.innerHTML = '<div style="color:var(--muted);font-size:13px;padding:12px 0">Nema podataka za ovaj period.</div>';
+      return;
+    }
+    el.innerHTML = sorted.map(function(entry, i){
+      return '<div class="top-row">' +
+        '<div class="top-rank">'+(i+1)+'</div>' +
+        '<div class="top-name">'+esc(entry[0])+'</div>' +
+        '<div class="top-bar-wrap"><div class="top-bar" style="width:'+Math.round((entry[1]/maxCnt)*100)+'%"></div></div>' +
+        '<div class="top-cnt">'+entry[1]+'×</div>' +
+      '</div>';
+    }).join('');
+  }
+
+  // ── RENDER ORDERS ──────────────────────────────────────
+  window._renderOrders = function() {
+    var grid = document.getElementById('ordersGrid');
+    var orders = window._allOrders || [];
+    var list;
+
+    if      (window._currentTab === 'new')     list = orders.filter(function(o){ return o.status==='new'; });
+    else if (window._currentTab === 'done')    list = orders.filter(function(o){ return o.status==='done'; });
+    else if (window._currentTab === 'history') list = orders.slice();
+    else                                       list = orders.slice();
+
+    if (window._currentTab === 'history') {
+      if (!list.length) {
+        grid.innerHTML = '<div class="empty"><div class="empty-icon">📋</div><div class="empty-title">Nema istorije</div><div class="empty-sub">Narudžbe će se pojaviti ovde.</div></div>';
+        return;
+      }
+      var rows = list.map(function(o){
+        return '<tr>' +
+          '<td style="color:var(--muted);font-size:11px">#'+esc(o.id.slice(-5).toUpperCase())+'</td>' +
+          '<td>'+fmtDate(o.createdAt)+'</td>' +
+          '<td>'+fmtTime(o.createdAt)+'</td>' +
+          '<td class="ht-name">'+esc(o.firstName)+' '+esc(o.lastName)+'</td>' +
+          '<td><a href="tel:'+esc(o.phone)+'" style="color:var(--gold);text-decoration:none">'+esc(o.phone)+'</a></td>' +
+          '<td>'+esc(o.meal)+'</td>' +
+          '<td style="color:var(--muted)">'+esc(o.topping||'—')+'</td>' +
+          '<td class="ht-price">'+(o.total||0).toLocaleString('sr-RS')+' RSD</td>' +
+          '<td class="'+(o.status==='done'?'ht-done':'ht-new')+'">'+(o.status==='done'?'Završeno':'Novo')+'</td>' +
+        '</tr>';
+      }).join('');
+      grid.innerHTML = '<div class="history-wrap"><table class="htable"><thead><tr>' +
+        '<th>#</th><th>Datum</th><th>Vreme</th><th>Kupac</th><th>Telefon</th>' +
+        '<th>Jelo</th><th>Dodatak</th><th>Iznos</th><th>Status</th>' +
+        '</tr></thead><tbody>' + rows + '</tbody></table></div>';
+      return;
+    }
+
+    if (!list.length) {
+      var msgs = { new:'Nema novih narudžbi', done:'Nema završenih', all:'Nema narudžbi' };
+      grid.innerHTML = '<div class="empty"><div class="empty-icon">🍕</div><div class="empty-title">'+(msgs[window._currentTab]||'Nema')+'</div><div class="empty-sub">Čekamo...</div></div>';
+      return;
+    }
+
+    grid.innerHTML = list.map(function(o){
+      var actions = o.status === 'new'
+        ? '<div class="oc-actions"><button class="btn-done" onclick="markDone(\''+o.id+'\')">✓ Završeno</button><button class="btn-del" onclick="delOrder(\''+o.id+'\')">🗑</button></div>'
+        : '<div class="oc-actions"><button class="btn-del" onclick="delOrder(\''+o.id+'\')" style="flex:1">🗑 Obriši</button></div>';
+      return '<div class="ocard '+(o.status==='new'?'is-new':'is-done')+'" id="card-'+o.id+'">' +
+        '<div class="oc-top"><div class="oc-num">#'+esc(o.id.slice(-6).toUpperCase())+'</div><div class="oc-time">'+fmtTime(o.createdAt)+'</div></div>' +
+        '<div class="oc-pill '+o.status+'">'+(o.status==='new'?'Nova narudžba':'Završeno')+'</div>' +
+        '<div class="oc-name">'+esc(o.firstName)+' '+esc(o.lastName)+'</div>' +
+        '<div class="oc-phone"><a href="tel:'+esc(o.phone)+'">'+esc(o.phone)+'</a></div>' +
+        '<div class="oc-divider"></div>' +
+        '<div class="oc-row"><span class="oc-lbl">Jelo</span><span class="oc-val">'+esc(o.meal)+'</span></div>' +
+        '<div class="oc-row"><span class="oc-lbl">Dodatak</span><span class="oc-val">'+esc(o.topping||'Bez dodatka')+'</span></div>' +
+        '<div class="oc-total"><span class="oc-total-lbl">Ukupno</span><span class="oc-total-val">'+(o.total||0).toLocaleString('sr-RS')+' RSD</span></div>' +
+        actions + '</div>';
+    }).join('');
+  };
+
+  // ── TAB SWITCHING ──────────────────────────────────────
+  function setTab(tab, btn) {
+    window._currentTab = tab;
+    document.querySelectorAll('.tab').forEach(function(t){ t.classList.remove('active'); });
+    btn.classList.add('active');
+    window._renderOrders();
+  }
+
+  // ── ACTIONS ────────────────────────────────────────────
+  function markDone(id) {
+    if (window._fbMarkDone) window._fbMarkDone(id);
+  }
+  function delOrder(id) {
+    if (confirm('Obrisati ovu narudžbu?') && window._fbDelete) window._fbDelete(id);
+  }
+
+  // resize redraws chart
+  window.addEventListener('resize', function(){
+    if (document.getElementById('analyticsModal').classList.contains('open')) window._renderAnalytics();
+  });
+</script>
+
+</body>
+</html>
