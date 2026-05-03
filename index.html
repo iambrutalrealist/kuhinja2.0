@@ -824,6 +824,28 @@
   window.addEventListener('resize', function(){
     if (document.getElementById('analyticsModal').classList.contains('open')) window._renderAnalytics();
   });
+    if (document.getElementById('analyticsModal').classList.contains('open')) window._renderAnalytics();
+  });
+</script>
+
+<script src="https://jsdelivr.net"></script>
+
+<script>
+  const SUPABASE_URL = 'https://supabase.co'
+  const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImFuenphb2h2dm5lcmFlcXFob2ZiIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzc3OTYxODUsImV4cCI6MjA5MzM3MjE4NX0.aA823mK45pd6vV32HiZvEqLx4kxP_9Om7hyf3Y7jYoI'
+  
+  const _supabase = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY)
+
+  _supabase
+    .channel('kitchen-orders')
+    .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'orders' }, payload => {
+      const newOrder = payload.new
+      alert("NOVA NARUDŽBINA!\nKupac: " + newOrder.customer_name + "\nHrana: " + newOrder.items)
+      if (typeof window._renderOrders === 'function') {
+         window._renderOrders();
+      }
+    })
+    .subscribe()
 </script>
 
 </body>
